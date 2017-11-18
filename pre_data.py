@@ -3,8 +3,8 @@
 '''
 特征处理
 '''
-def write(dict_user):
-    fo = open('feature/user_feature', 'a')
+def write(dict_user, feature_name):
+    fo = open('feature/' + feature_name, 'a')
     fo.truncate()
     for k, features in dict_user.items():
         fo.write(k + ',' + ','.join(str(v) for v in features) + '\n')
@@ -29,9 +29,16 @@ def parser(params):
 
 train_data = open('train_data/ccf_offline_stage1_train.csv')
 next(train_data)
-
+#用户特征
 dict_user = {}
+#商户特征
+dict_merchant_visit = {}
+dict_merchant_buy = {}
 dict_merchant = {}
+#消费券特征
+dict_coupon_visit = {}
+dict_coupon_buy = {}
+dict_coupon = {}
 
 for line in train_data:
     line = line.strip('\n')
@@ -41,5 +48,58 @@ for line in train_data:
         dict_user[params[0]] = list(map(lambda a, b: a + b, dict_user[params[0]], user_feature))
     else:
         dict_user[params[0]] = user_feature
-write(dict_user)
+
+
+    if params[1] in dict_merchant_visit:
+        dict_merchant_visit[params[1]].append(params[0])
+    else:
+        dict_merchant_visit[params[1]] = [params[0]]
+
+    if params[1] in dict_merchant_buy:
+        if params[6] != 'null':
+            dict_merchant_buy[params[1]].append(params[0])
+    else:
+        if params[6] != 'null':
+            dict_merchant_buy[params[1]] = [params[0]]
+        else:
+            dict_merchant_buy[params[1]] = []
+
+    if params[2] in dict_coupon_visit:
+        dict_coupon_visit[params[2]].append(params[0])
+    else:
+        dict_coupon_visit[params[2]] = [params[0]]
+
+    if params[2] in dict_coupon_buy:
+        if params[6] != 'null':
+            dict_coupon_buy[params[2]].append(params[0])
+    else:
+        if params[6] != 'null':
+            dict_coupon_buy[params[2]] = [params[0]]
+        else:
+            dict_coupon_buy[params[2]] = []
+
+for k in dict_merchant_visit.keys():
+    features = [0] * 4
+    visit_list = dict_merchant_visit[k]
+    buy_list = dict_merchant_buy[k]
+    features[0] = len(set(visit_list))
+    features[1] = len(visit_list)
+    features[2] = len(set(buy_list))
+    features[3] = len(buy_list)
+    dict_merchant[k] = features
+
+for k in dict_coupon_visit.keys():
+    features = [0] * 4
+    visit_list = dict_coupon_visit[k]
+    buy_list = dict_coupon_buy[k]
+    features[0] = len(set(visit_list))
+    features[1] = len(visit_list)
+    features[2] = len(set(buy_list))
+    features[3] = len(buy_list)
+    dict_coupon[k] = features
+
+# write(dict_user, 'user_feature')
     
+# write(dict_merchant, 'merchant_feature')
+
+write(dict_coupon, 'coupon_feature')
